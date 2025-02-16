@@ -1,53 +1,132 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import DOMPurify from "dompurify";
 // import css from public
-import "./globals.css";
+
+interface TvMaze {
+  score: number;
+  show: {
+    id: number;
+    url: string;
+    name: string;
+    type: string;
+    language: string;
+    genres: string[];
+    status: string;
+    runtime: number;
+    averageRuntime: number;
+    premiered: string;
+    ended: string;
+    officialSite: string;
+    schedule: {
+      time: string;
+      days: string[];
+    };
+    rating: {
+      average: number;
+    };
+    weight: number;
+    network: {
+      id: number;
+      name: string;
+      country: {
+        name: string;
+        code: string;
+        timezone: string;
+      };
+    };
+    webChannel: null;
+    dvdCountry: null;
+    externals: {
+      tvrage: number;
+      thetvdb: number;
+      imdb: string;
+    };
+    image: {
+      medium: string;
+      original: string;
+    };
+    summary: string;
+    updated: number;
+    _links: {
+      self: {
+        href: string;
+      };
+      previousepisode: {
+        href: string;
+      };
+    }
+  }
+};
 
 export default function Home() {
 
-  const [time, setTime] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const interval = useRef<number | null>(null);
+  const [search, setSearch] = useState("coding");
 
-  useEffect(() => {
-    if (isRunning) {
-   interval.current = window.setInterval(() => {
-        setTime((prevTime) => prevTime + 1);
-      }, 1000);
-      
-    } else {
-      if (interval.current) {
-        window.clearInterval(interval.current);
-      }
-    }
-  }, [isRunning]);
+  const [TvMazes, setTvMazes] = useState<TvMaze[]>([]);
+
+  useEffect(()=>{
+    fetch("http://api.tvmaze.com/search/shows?q="+search)
+    .then((res) => res.json())
+    .then((data) => {
+      setTvMazes(data);
+    })
+    .catch((err) => {
+      console.log(err.message);
+    })
+  },[search])
+
  
-  const handleStart = () => {
-    console.log("start");
-    setIsRunning(true);
-  };
-  const handleStop = () => {
-    console.log("stop");
-    setIsRunning(false);
-  };
-  const handleReset = () => {
-    setTime(0);
-  };
 
   return (
-   <div className="content d-flex align-items-center justify-content-center h-100">
-    <div className="card col-xxl-4">
-      <div className="card-body">
-        <h1 className="card-title">{time}</h1>
-      </div>
-      <div className="card-footer">
-        <div className="d-flex justify-content-between">
-          <button type="button"  onClick={handleStop} className="btn btn-sm btn-outline-danger me-3">Stop</button>
-          <button type="button" onClick={handleStart} className="btn btn-sm btn-success">Start</button>
+    <>
+      <div className="main">
+        <nav className="navbar navbar-expand-lg navbar-dark border-bottom ">
+          <div className="container-fluid">
+            <a className="navbar-brand text-dark" href="#"> Dunstan Safu </a>
+          </div>
+        </nav>
+        <div className="content">
+          <div className="row">
+            <div className="col-xxl-12">
+              <div className="d-flex justify-content-between align-items-center">
+                <h3>TVMaze Search</h3>
+                <div>
+                  <input type="text" className="form-control"  onInput={(event)=> setSearch(event.target.value)} placeholder="Search" />
+                </div>
+              </div>
+              <hr/>
+              <div className="row">
+              {TvMazes.map((item, index) => (
+                <div key={index} className="col-xxl-4 mb-3">
+                  <div className="card">
+                  <div className="card-body">
+                    <div className="d-flex align-items-center">
+                    {item.show.image && <img src={item.show.image.medium} alt={item.show.name} className="img-fluid" />}
+                      <div className="p-3">
+                        <h5 className="card-title">Title : {item.show.name}</h5>
+                        <p><b>Language : </b> {item.show.language}</p>
+                        <p><b>Language : </b> {item.show.language}</p>
+                        <p><b>weight : </b> {item.show.weight}</p>
+                        <p><b>Ended On : </b> {item.show.ended}</p>
+                        <p><b>Status : </b> {item.show.status}</p>
+                        <p><b>Premiered : </b> {item.show.premiered}</p>
+                        {item.show.rating.average && <p><b>Rating : </b> {item.show.rating.average}</p>}
+                        <p><b>Schedule : </b> {item.show.schedule.days.join(", ")} at {item.show.schedule.time}</p>
+                      </div>
+                    </div>
+                    <p className="card-text" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.show.summary) }}></p>
+                  </div>
+                  </div>
+                </div>
+              ))}
+              </div>
+              
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    
-   </div>
+    </>
+
   );
 }
